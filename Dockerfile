@@ -22,7 +22,9 @@ RUN apk add --no-cache \
     libpng-dev \
     zlib-dev \
     fontconfig-dev \
-    libffi-dev
+    libffi-dev \
+    autoconf \
+    pkgconfig
 
 # Defina o diretório de trabalho dentro do contêiner
 WORKDIR /app
