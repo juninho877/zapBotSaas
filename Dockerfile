@@ -27,13 +27,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instale as dependências do backend
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Copie os arquivos package.json do cliente
 COPY client/package*.json ./client/
 
 # Instale as dependências do frontend
-RUN cd client && npm ci --omit=dev
+RUN cd client && npm install --omit=dev
 
 # Copie o código fonte
 COPY . .
