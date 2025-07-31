@@ -18,7 +18,9 @@ RUN apk add --no-cache \
     libjpeg-turbo-dev \
     freetype-dev \
     libwebp-dev \
-    vips-dev
+    vips-dev \
+    libpng-dev \
+    zlib-dev
 
 # Defina o diretório de trabalho dentro do contêiner
 WORKDIR /app
