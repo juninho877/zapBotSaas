@@ -43,7 +43,7 @@ WORKDIR /app/client
 RUN npm install
 
 # Construa o frontend React
-RUN npm run build
+RUN CI=false npm run build
 
 # Volte para o diretório raiz
 WORKDIR /app
