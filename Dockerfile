@@ -1,5 +1,5 @@
 # Use uma imagem oficial do Node.js como base
-FROM node:18-alpine
+FROM node:18-alpine AS base
 
 # Instale dependências do sistema necessárias para compilação
 RUN apk add --no-cache \
@@ -7,53 +7,75 @@ RUN apk add --no-cache \
     make \
     g++ \
     git \
-    build-base \
-    cairo-dev \
-    jpeg-dev \
-    pango-dev \
-    musl-dev \
-    giflib-dev \
-    pixman-dev \
-    pangomm-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
-    libwebp-dev \
-    vips-dev \
-    libpng-dev \
-    zlib-dev \
-    fontconfig-dev \
-    libffi-dev \
-    autoconf \
-    pkgconfig
+    && rm -rf /var/cache/apk/*
 
-# Defina o diretório de trabalho dentro do contêiner
+# Stage para build do frontend
+FROM base AS frontend-builder
+
+# Defina o diretório de trabalho
+WORKDIR /app/client
+
+# Copie apenas os arquivos de dependências primeiro
+COPY client/package*.json ./
+
+# Instale dependências com cache otimizado
+RUN npm ci --only=production --no-audit --no-fund \
+    && npm cache clean --force
+
+# Copie o código fonte do frontend
+COPY client/ ./
+
+# Construa o frontend
+RUN npm run build \
+    && rm -rf node_modules \
+    && rm -rf src \
+    && rm -rf public \
+    && npm cache clean --force
+
+# Stage para o backend
+FROM base AS backend-builder
+
+# Defina o diretório de trabalho
 WORKDIR /app
 
-# Copie os arquivos package.json e package-lock.json para o diretório de trabalho
+# Copie apenas os arquivos de dependências do backend
 COPY package*.json ./
 
-# Instale as dependências do backend
-RUN npm install --omit=dev
+# Instale dependências do backend
+RUN npm ci --only=production --no-audit --no-fund \
+    && npm cache clean --force
 
-# Copie o código fonte
-COPY . .
+# Stage final
+FROM node:18-alpine AS production
 
-# Mude para o diretório do cliente e instale dependências
-WORKDIR /app/client
-RUN npm install
+# Instale apenas as dependências mínimas necessárias
+RUN apk add --no-cache \
+    dumb-init \
+    && rm -rf /var/cache/apk/*
 
-# Construa o frontend React
-RUN CI=false npm run build
+# Crie usuário não-root
+RUN addgroup -g 1001 -S nodejs \
+    && adduser -S nextjs -u 1001
 
-# Volte para o diretório raiz
+# Defina o diretório de trabalho
 WORKDIR /app
 
-# Crie diretórios necessários
-RUN mkdir -p uploads/welcome uploads/periodic server/auth
+# Copie as dependências do backend
+COPY --from=backend-builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
-# Defina permissões corretas
-RUN chown -R node:node /app
-USER node
+# Copie o código do backend
+COPY --chown=nextjs:nodejs server/ ./server/
+COPY --chown=nextjs:nodejs package*.json ./
+
+# Copie o build do frontend
+COPY --from=frontend-builder --chown=nextjs:nodejs /app/client/build ./client/build
+
+# Crie diretórios necessários
+RUN mkdir -p uploads/welcome uploads/periodic server/auth \
+    && chown -R nextjs:nodejs uploads server/auth
+
+# Mude para usuário não-root
+USER nextjs
 
 # Exponha a porta
 EXPOSE 3000
@@ -61,6 +83,9 @@ EXPOSE 3000
 # Comando de saúde para verificar se a aplicação está funcionando
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+# Use dumb-init para gerenciar processos
+ENTRYPOINT ["dumb-init", "--"]
 
 # Defina o comando para iniciar a aplicação
 CMD ["node", "server/app.js"]
