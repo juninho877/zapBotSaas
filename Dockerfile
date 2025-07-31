@@ -20,7 +20,9 @@ RUN apk add --no-cache \
     libwebp-dev \
     vips-dev \
     libpng-dev \
-    zlib-dev
+    zlib-dev \
+    fontconfig-dev \
+    libffi-dev
 
 # Defina o diretório de trabalho dentro do contêiner
 WORKDIR /app
