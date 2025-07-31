@@ -1,11 +1,24 @@
 # Use uma imagem oficial do Node.js como base
 FROM node:18-alpine
 
-# Instale dependências do sistema necessárias
-RUN apk add --no-cache python3 make g++ git
-
-# Instale dependências do sistema necessárias
-RUN apk add --no-cache python3 make g++
+# Instale dependências do sistema necessárias para compilação
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    git \
+    build-base \
+    cairo-dev \
+    jpeg-dev \
+    pango-dev \
+    musl-dev \
+    giflib-dev \
+    pixman-dev \
+    pangomm-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    libwebp-dev \
+    vips-dev
 
 # Defina o diretório de trabalho dentro do contêiner
 WORKDIR /app
