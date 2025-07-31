@@ -40,7 +40,7 @@ COPY . .
 
 # Mude para o diretório do cliente e instale dependências
 WORKDIR /app/client
-RUN npm install --omit=dev
+RUN npm install
 
 # Construa o frontend React
 RUN npm run build
