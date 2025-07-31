@@ -35,17 +35,18 @@ COPY package*.json ./
 # Instale as dependências do backend
 RUN npm install --omit=dev
 
-# Copie os arquivos package.json do cliente
-COPY client/package*.json ./client/
-
-# Instale as dependências do frontend
-RUN cd client && npm install --omit=dev
-
 # Copie o código fonte
 COPY . .
 
+# Mude para o diretório do cliente e instale dependências
+WORKDIR /app/client
+RUN npm install --omit=dev
+
 # Construa o frontend React
-RUN cd client && npm run build
+RUN npm run build
+
+# Volte para o diretório raiz
+WORKDIR /app
 
 # Crie diretórios necessários
 RUN mkdir -p uploads/welcome uploads/periodic server/auth
