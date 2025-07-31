@@ -2,6 +2,9 @@
 FROM node:18-alpine
 
 # Instale dependências do sistema necessárias
+RUN apk add --no-cache python3 make g++ git
+
+# Instale dependências do sistema necessárias
 RUN apk add --no-cache python3 make g++
 
 # Defina o diretório de trabalho dentro do contêiner
@@ -11,13 +14,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instale as dependências do backend
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copie os arquivos package.json do cliente
 COPY client/package*.json ./client/
 
 # Instale as dependências do frontend
-RUN cd client && npm ci --only=production
+RUN cd client && npm ci --omit=dev
 
 # Copie o código fonte
 COPY . .
